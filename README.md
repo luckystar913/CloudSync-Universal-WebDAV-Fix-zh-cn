@@ -1,6 +1,6 @@
 # CloudSync-Universal-WebDAV-Fix-zh-cn
 
-CloudSync 通用 WebDAV 适配修复版本。这是一个独立版本，不可和原版 CloudSync WebDAV 共存。
+CloudSync 通用 WebDAV 适配修复版本。这是一个独立版本，不可和原版 CloudSync WebDAV 共存。由luckystar913修改。
 
 # CloudSync 通用 WebDAV 适配补丁修复版
 
@@ -324,7 +324,9 @@ A: 不可以。这是一个独立版本，UniqueID 和原版相同，SMAPI 会�
 | 模组名称 | Cloud Sync (WebDAV 版) |
 | 原作者 | advx |
 | Nexus Mods 链接 | `https://www.nexusmods.com/stardewvalley/mods/42850` |
-
+| 模组名称 | CloudSync-Universal |
+| 此版本作者 | luckystar913 |
+| GitHub 链接 | `https://github.com/luckystar913/CloudSync-Universal-WebDAV-Fix-zh-cn` |
 ---
 
 ## 许可证
