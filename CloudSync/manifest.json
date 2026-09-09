@@ -1,7 +1,7 @@
 {
   "Name": "CloudSync",
   "Author": "advx",
-  "Version": "0.1.0",
+  "Version": "1.0.0-universal",
   "Description": "Sync saves, mod configs, and mod data to Nextcloud via WebDAV",
   "UniqueID": "advx.CloudSync",
   "EntryDll": "CloudSync.dll",
