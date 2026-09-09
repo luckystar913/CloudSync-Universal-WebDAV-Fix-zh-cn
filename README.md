@@ -47,7 +47,7 @@ CloudSync 通用 WebDAV 适配修复版本。这是一个独立版本，不可�
 发布包顶层目录为 `CloudSync-Universal-WebDAV-Fix/`，分为两部分：可直接使用的模组本体 + 源码工程。
 
 ```
-CloudSync-Universal-WebDAV-Fix/
+CloudSync-Universal-WebDAV-Fix/            # 源工程结构，这里包含了模组本体和源代码
 │
 ├── README.md                              # 本说明文件
 ├── LICENSE                                # MIT 开源许可证
