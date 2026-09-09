@@ -49,57 +49,57 @@ CloudSync 通用 WebDAV 适配修复版本。这是一个独立版本，不可�
 ```
 CloudSync-Universal-WebDAV-Fix/
 │
-├── README.md                              本说明文件
-├── LICENSE                                MIT 开源许可证
+├── README.md                              # 本说明文件
+├── LICENSE                                # MIT 开源许可证
 │
-├── CloudSync/                             【模组本体】复制到游戏 Mods\ 文件夹即可使用
-│   ├── CloudSync.dll                      编译好的模组 DLL
-│   ├── manifest.json                      SMAPI 模组清单（SMAPI 加载模组用）
-│   └── config.json                        配置文件（运行一次游戏后自动生成，也可手动创建）
+├── CloudSync/                             #【模组本体】复制到游戏 Mods\ 文件夹即可使用
+│   ├── CloudSync.dll                      # 编译好的模组 DLL
+│   ├── manifest.json                      # SMAPI 模组清单（SMAPI 加载模组用）
+│   └── config.json                        # 配置文件（运行一次游戏后自动生成，也可手动创建）
 │
-└── CloudSync-Universal-WebDAV-Patch/      【源码工程】用于自行编译和修改
-    ├── .gitignore                         Git 忽略规则
-    ├── CloudSync.csproj                   项目工程文件（定义依赖和编译配置）
+└── CloudSync-Universal-WebDAV-Patch/      # 【源码工程】用于自行编译和修改
+    ├── .gitignore                         # Git 忽略规则
+    ├── CloudSync.csproj                   # 项目工程文件（定义依赖和编译配置）
     │
-    ├── CloudSync/                          模组主逻辑
-    │   ├── ModEntry.cs                    模组入口：事件注册、GMCM 配置界面、HUD 提示、控制台命令
-    │   └── ModConfig.cs                   配置类：定义所有可配置选项的字段结构
+    ├── CloudSync/                         # 模组主逻辑
+    │   ├── ModEntry.cs                    # 模组入口：事件注册、GMCM 配置界面、HUD 提示、控制台命令
+    │   └── ModConfig.cs                   # 配置类：定义所有可配置选项的字段结构
     │
-    ├── CloudSync.Patches/                 Harmony 补丁
-    │   └── SaveFileSlotPatch.cs           存档选择界面的补丁：在已同步的存档旁显示云图标
+    ├── CloudSync.Patches/                 # Harmony 补丁
+    │   └── SaveFileSlotPatch.cs           # 存档选择界面的补丁：在已同步的存档旁显示云图标
     │
-    ├── CloudSync.Sync/                    同步核心逻辑
-    │   ├── SyncManager.cs                 同步管理器：上传/下载/全量同步/冲突处理
-    │   ├── CloudSaveChecker.cs            云端存档检查器：列出云端存档、匹配本地农夫 ID
-    │   ├── ConflictResolver.cs            冲突解决器：比对时间戳决定上传/下载/冲突备份
-    │   ├── SyncState.cs                   同步状态持久化：读写 sync-state.json
-    │   ├── SyncStateData.cs               同步状态数据结构
-    │   ├── SaveSyncInfo.cs                单个存档的同步信息
-    │   ├── ModConfigSyncInfo.cs           单个模组配置的同步信息
-    │   ├── SyncDirection.cs               同步方向枚举（None/Upload/Download/Conflict）
-    │   └── SyncResult.cs                  同步操作结果
+    ├── CloudSync.Sync/                    # 同步核心逻辑
+    │   ├── SyncManager.cs                 # 同步管理器：上传/下载/全量同步/冲突处理
+    │   ├── CloudSaveChecker.cs            # 云端存档检查器：列出云端存档、匹配本地农夫 ID
+    │   ├── ConflictResolver.cs            # 冲突解决器：比对时间戳决定上传/下载/冲突备份
+    │   ├── SyncState.cs                   # 同步状态持久化：读写 sync-state.json
+    │   ├── SyncStateData.cs               # 同步状态数据结构
+    │   ├── SaveSyncInfo.cs                # 单个存档的同步信息
+    │   ├── ModConfigSyncInfo.cs           # 单个模组配置的同步信息
+    │   ├── SyncDirection.cs               # 同步方向枚举（None/Upload/Download/Conflict）
+    │   └── SyncResult.cs                  # 同步操作结果
     │
-    ├── CloudSync.WebDav/                  WebDAV 客户端
-    │   ├── WebDavClient.cs                WebDAV 协议实现：上传/下载/列目录/建目录/删除/PROPFIND
-    │   └── WebDavResource.cs             WebDAV 资源数据结构
+    ├── CloudSync.WebDav/                  # WebDAV 客户端
+    │   ├── WebDavClient.cs                # WebDAV 协议实现：上传/下载/列目录/建目录/删除/PROPFIND
+    │   └── WebDavResource.cs              # WebDAV 资源数据结构
     │
-    ├── CloudSync.Utils/                   工具类
-    │   └── PathHelper.cs                  路径辅助：获取存档路径、存档文件列表、模组配置文件
+    ├── CloudSync.Utils/                   # 工具类
+    │   └── PathHelper.cs                  # 路径辅助：获取存档路径、存档文件列表、模组配置文件
     │
-    ├── CloudSync.Integration/             第三方集成接口
-    │   └── IGenericModConfigMenuApi.cs    GMCM（Generic Mod Config Menu）API 接口定义
+    ├── CloudSync.Integration/             # 第三方集成接口
+    │   └── IGenericModConfigMenuApi.cs    # GMCM（Generic Mod Config Menu）API 接口定义
     │
     ├── Properties/
-    │   └── AssemblyInfo.cs                程序集信息（版本号等）
+    │   └── AssemblyInfo.cs                # 程序集信息（版本号等）
     │
-    ├── scripts/                           编译脚本
-    │   ├── build.bat                      Windows 批处理编译脚本
-    │   ├── build.ps1                      Windows PowerShell 编译脚本
-    │   ├── build.sh                       Linux/macOS bash 编译脚本
-    │   └── Makefile                       GNU Make 编译脚本
+    ├── scripts/                           # 编译脚本
+    │   ├── build.bat                      # Windows 批处理编译脚本
+    │   ├── build.ps1                      # Windows PowerShell 编译脚本
+    │   ├── build.sh                       # Linux/macOS bash 编译脚本
+    │   └── Makefile                       # GNU Make 编译脚本
     │
-    ├── bin/                               编译输出（自动生成，已 gitignore）
-    ├── obj/                               编译中间文件（自动生成，已 gitignore）
+    ├── bin/                               # 编译输出（自动生成，已 gitignore）
+    ├── obj/                               # 编译中间文件（自动生成，已 gitignore）
     │
     └── （编译前需手动复制的依赖 DLL，见下方"依赖文件获取"）
         ├── StardewModdingAPI.dll
