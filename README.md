@@ -230,22 +230,24 @@ Mods\CloudSync\
 
 ### config.json 示例
 
+> JSON 格式不支持注释，下面 `#` 后的内容仅为说明，实际使用时请删掉 `#` 及后面的文字。
+
 ```json
 {
-  "NextcloudUrl": "https://dav.jianguoyun.com/dav/",
-  "Username": "your-email@example.com",
-  "Password": "your-app-password",
-  "RemotePath": "/StardewSync",
-  "SyncSaves": true,
-  "SyncModConfigs": false,
-  "SyncModData": false,
-  "AutoSyncOnSave": true,
-  "AutoSyncOnLoad": true,
-  "AlwaysDownloadFromCloud": false,
-  "ManualSyncKey": "None",
-  "MaxBackups": 3,
-  "TimeoutSeconds": 60,
-  "ShowHudNotifications": true
+  "NextcloudUrl": "https://dav.jianguoyun.com/dav/",  # WebDAV 服务器地址，需以 / 结尾。坚果云填这个；其他网盘请到对应网盘的 WebDAV 说明里查
+  "Username": "your-email@example.com",               # 网盘登录账号，一般为注册邮箱，视网盘而定
+  "Password": "your-app-password",                    # 应用专用密码，不是登录密码。坚果云在 网页端 > 安全选项 > 第三方应用管理 里生成
+  "RemotePath": "/StardewSync",                       # 网盘上存放同步数据的目录名，可自定义，首次使用会自动创建
+  "SyncSaves": true,                                  # 是否同步存档文件（主存档 + SaveGameInfo），核心功能，建议 true
+  "SyncModConfigs": false,                            # 是否同步其他模组的 config.json，装了大量模组时建议 false 以节省流量
+  "SyncModData": false,                               # 是否同步模组存档数据（进度、解锁等），同上，按需开启
+  "AutoSyncOnSave": true,                             # 游戏保存后（睡觉过夜）是否自动上传到网盘
+  "AutoSyncOnLoad": true,                             # 加载存档时是否自动检查并下载云端较新版本
+  "AlwaysDownloadFromCloud": false,                   # 加载时是否强制用云端版本覆盖本地（云端为权威），true 时忽略本地修改
+  "ManualSyncKey": "None",                            # 手动触发完整双向同步的按键，填 None 表示禁用。可用值如 H、F5 等
+  "MaxBackups": 3,                                    # 冲突时每个存档保留的本地备份数量，0~10，备份存在存档文件夹的 _cloudsync_backup_ 子目录
+  "TimeoutSeconds": 60,                               # WebDAV 请求超时时间（秒），网络慢可调大，范围 5~120
+  "ShowHudNotifications": true                        # 是否在游戏内显示同步状态提示（如 已上传、已是最新 等）
 }
 ```
 
