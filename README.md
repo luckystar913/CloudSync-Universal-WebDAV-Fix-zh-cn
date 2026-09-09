@@ -48,6 +48,8 @@ CloudSync 通用 WebDAV 适配修复版本 这是一个独立版本！不可和�
 CloudSync-Universal-WebDAV-Fix/
 ├── CloudSync/
 │   └── CloudSync.dll    # 修改后的核心文件
+|   └── config.json      # 模组配置文件 （有时候发布里面不一定包含，运行一次模组后自动生成）
+|   └── manifest.json    # 模组清单
 ├── README.md
 └── LICENSE
 
