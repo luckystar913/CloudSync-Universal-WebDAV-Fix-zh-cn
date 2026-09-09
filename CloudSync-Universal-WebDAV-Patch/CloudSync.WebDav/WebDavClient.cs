@@ -1,0 +1,248 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using StardewModdingAPI;
+
+namespace CloudSync.WebDav;
+
+internal class WebDavClient
+{
+	private readonly HttpClient Http;
+
+	private readonly string BaseUrl;
+
+	private readonly IMonitor Monitor;
+
+	private const int MaxRetries = 1;
+
+	public WebDavClient(string nextcloudUrl, string username, string password, int timeoutSeconds, IMonitor monitor)
+	{
+		Monitor = monitor;
+		string text = nextcloudUrl.TrimEnd('/');
+		BaseUrl = text;
+		HttpClientHandler handler = new HttpClientHandler
+		{
+			AutomaticDecompression = (DecompressionMethods.GZip | DecompressionMethods.Deflate)
+		};
+		Http = new HttpClient(handler)
+		{
+			Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+		};
+		string parameter = Convert.ToBase64String(Encoding.UTF8.GetBytes(username + ":" + password));
+		Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", parameter);
+	}
+
+	private string BuildUrl(string remotePath)
+	{
+		return BaseUrl + "/" + remotePath.TrimStart('/');
+	}
+
+	public async Task<bool> TestConnection()
+	{
+		try
+		{
+			return await PropFind("/") != null;
+		}
+		catch (Exception ex)
+		{
+			Monitor.Log("Connection test failed: " + ex.Message, (LogLevel)4);
+			return false;
+		}
+	}
+
+	public async Task<bool> Upload(string remotePath, byte[] data)
+	{
+		return await WithRetry(async delegate
+		{
+			string url = BuildUrl(remotePath);
+			using ByteArrayContent content = new ByteArrayContent(data);
+			content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			HttpResponseMessage httpResponseMessage = await Http.PutAsync(url, content);
+			if (httpResponseMessage.StatusCode == HttpStatusCode.Conflict || httpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+			{
+				string text = remotePath.Substring(0, remotePath.LastIndexOf('/'));
+				if (!string.IsNullOrEmpty(text))
+				{
+					await CreateDirectory(text);
+					using ByteArrayContent retryContent = new ByteArrayContent(data);
+					retryContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+					httpResponseMessage = await Http.PutAsync(url, retryContent);
+				}
+			}
+			if (!httpResponseMessage.IsSuccessStatusCode)
+			{
+				Monitor.Log($"Upload failed: {httpResponseMessage.StatusCode} for {remotePath}", (LogLevel)4);
+				return false;
+			}
+			return true;
+		});
+	}
+
+	public async Task<bool> UploadFile(string remotePath, string localPath)
+	{
+		return await Upload(remotePath, await File.ReadAllBytesAsync(localPath));
+	}
+
+	public async Task<byte[]?> Download(string remotePath)
+	{
+		return await WithRetry(async delegate
+		{
+			string requestUri = BuildUrl(remotePath);
+			HttpResponseMessage httpResponseMessage = await Http.GetAsync(requestUri);
+			if (httpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+			{
+				Monitor.Log("File not found on remote: " + remotePath, (LogLevel)1);
+				return (byte[])null;
+			}
+			if (!httpResponseMessage.IsSuccessStatusCode)
+			{
+				Monitor.Log($"Download failed: {httpResponseMessage.StatusCode} for {remotePath}", (LogLevel)4);
+				return (byte[])null;
+			}
+			return await httpResponseMessage.Content.ReadAsByteArrayAsync();
+		});
+	}
+
+	public async Task<bool> DownloadFile(string remotePath, string localPath)
+	{
+		byte[] array = await Download(remotePath);
+		if (array == null)
+		{
+			return false;
+		}
+		string directoryName = Path.GetDirectoryName(localPath);
+		if (directoryName != null)
+		{
+			Directory.CreateDirectory(directoryName);
+		}
+		await File.WriteAllBytesAsync(localPath, array);
+		return true;
+	}
+
+	public async Task<bool> CreateDirectory(string remotePath)
+	{
+		string[] array = remotePath.Trim('/').Split('/');
+		string current = "";
+		string[] array2 = array;
+		foreach (string text in array2)
+		{
+			current = current + "/" + text;
+			string requestUri = BuildUrl(current);
+			HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("MKCOL"), requestUri);
+			HttpResponseMessage httpResponseMessage = await Http.SendAsync(request);
+			if (!httpResponseMessage.IsSuccessStatusCode && httpResponseMessage.StatusCode != HttpStatusCode.MethodNotAllowed)
+			{
+				Monitor.Log($"MKCOL failed: {httpResponseMessage.StatusCode} for {current}", (LogLevel)4);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public async Task<List<WebDavResource>?> PropFind(string remotePath)
+	{
+		return await WithRetry(async delegate
+		{
+			string requestUri = BuildUrl(remotePath);
+			HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("PROPFIND"), requestUri)
+			{
+				Headers = { { "Depth", "1" } },
+				Content = new StringContent("<?xml version=\"1.0\" encoding=\"utf-8\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:getlastmodified/><d:getcontentlength/><d:resourcetype/></d:prop></d:propfind>", Encoding.UTF8, "application/xml")
+			};
+			HttpResponseMessage httpResponseMessage = await Http.SendAsync(request);
+			if (httpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+			{
+				return (List<WebDavResource>)null;
+			}
+			if (!httpResponseMessage.IsSuccessStatusCode)
+			{
+				Monitor.Log($"PROPFIND failed: {httpResponseMessage.StatusCode} for {remotePath}", (LogLevel)4);
+				return (List<WebDavResource>)null;
+			}
+			return ParsePropFindResponse(await httpResponseMessage.Content.ReadAsStringAsync());
+		});
+	}
+
+	public async Task<bool> Delete(string remotePath)
+	{
+		string requestUri = BuildUrl(remotePath);
+		HttpResponseMessage httpResponseMessage = await Http.DeleteAsync(requestUri);
+		if (httpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+		{
+			return true;
+		}
+		if (!httpResponseMessage.IsSuccessStatusCode)
+		{
+			Monitor.Log($"DELETE failed: {httpResponseMessage.StatusCode} for {remotePath}", (LogLevel)4);
+			return false;
+		}
+		return true;
+	}
+
+	public async Task<DateTime?> GetLastModified(string remotePath)
+	{
+		List<WebDavResource> list = await PropFind(remotePath);
+		if (list == null || list.Count == 0)
+		{
+			return null;
+		}
+		return list[0].LastModified;
+	}
+
+	private static List<WebDavResource> ParsePropFindResponse(string xml)
+	{
+		List<WebDavResource> list = new List<WebDavResource>();
+		XNamespace xNamespace = "DAV:";
+		XDocument xDocument = XDocument.Parse(xml);
+		foreach (XElement item in xDocument.Descendants(xNamespace + "response"))
+		{
+			WebDavResource webDavResource = new WebDavResource
+			{
+				Href = (item.Element(xNamespace + "href")?.Value ?? "")
+			};
+			XElement xElement = item.Element(xNamespace + "propstat")?.Element(xNamespace + "prop");
+			if (xElement != null)
+			{
+				string text = xElement.Element(xNamespace + "getlastmodified")?.Value;
+				if (!string.IsNullOrEmpty(text) && DateTime.TryParse(text, out var result))
+				{
+					webDavResource.LastModified = result.ToUniversalTime();
+				}
+				string s = xElement.Element(xNamespace + "getcontentlength")?.Value;
+				if (long.TryParse(s, out var result2))
+				{
+					webDavResource.ContentLength = result2;
+				}
+				webDavResource.IsCollection = xElement.Element(xNamespace + "resourcetype")?.Element(xNamespace + "collection") != null;
+			}
+			list.Add(webDavResource);
+		}
+		return list;
+	}
+
+	private async Task<T> WithRetry<T>(Func<Task<T>> action)
+	{
+		for (int attempt = 0; attempt <= 1; attempt++)
+		{
+			try
+			{
+				return await action();
+			}
+			catch (TaskCanceledException) when (attempt < 1)
+			{
+				Monitor.Log("Request timed out, retrying...", (LogLevel)3);
+			}
+			catch (HttpRequestException ex2) when (attempt < 1)
+			{
+				Monitor.Log("Network error: " + ex2.Message + ", retrying...", (LogLevel)3);
+			}
+		}
+		return await action();
+	}
+}
